@@ -12,7 +12,7 @@ const seedAdminOnce = async (mongoURL) => {
     });
 
     // Check if there are any existing admins
-    const existingAdmin = await User.findOne({ role: 'admin' });
+    const existingAdmin = await User.findOne({ email: process.env.ADMIN_EMAIL });
     if (existingAdmin) {
       console.log('Admin already exists');
       return;

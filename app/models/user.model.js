@@ -1,34 +1,47 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
   firstName: {
     type: String,
-    required: false
+    required: false,
   },
   lastName: {
     type: String,
-    required: false
+    required: false,
   },
   email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
   role: {
     type: String,
-    enum: ['admin', 'user'], // Assuming 'admin' and 'user' are the roles
-    default: 'user' // Default role is 'user'
+    enum: ["admin", "user"], // Assuming 'admin' and 'user' are the roles
+    default: "user", // Default role is 'user'
   },
   password: {
     type: String,
-    required: false // Assuming you'll store the password in the database
+    required: false, // Assuming you'll store the password in the database
+  },
+  forcePasswordReset: { 
+    type: Boolean,
+    default: true 
   },
   createdAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: null,
+  },
 });
 
-const User = mongoose.model('User', userSchema);
+userSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
+});
+
+const User = mongoose.model("User", userSchema);
 
 module.exports = User;

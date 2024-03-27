@@ -1,10 +1,10 @@
 const express = require('express');
-const userRoutes = require('./user.routes');
-
-
 const router = express.Router();
+const usersRouter = require('./user.routes');
+const passwordRouter = require('./Password.routes'); 
 
-router.use('/api/users', userRoutes);
+router.use('/users', usersRouter);
+router.use('/password', passwordRouter);
 
 
 module.exports = router;

@@ -34,7 +34,7 @@ app.get('/', (req, res) => {
 });
 
 // Routes
-app.use(routes); // Use the central route file
+app.use('/api',routes); // Use the central route file
 
 
 
