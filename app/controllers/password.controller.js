@@ -2,14 +2,9 @@ const bcrypt = require('bcrypt');
 const User = require("../models/user.model");
 const generatePassword = require("generate-password");
 const { sendEmail } = require('../utils/email.utils');
+const { validatePassword } = require('../utils/passwordValidator.utils');
 const mongoose = require("mongoose");
 
-
-// Custom function to validate password strength
-function validatePassword(password) {
-    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&])[A-Za-z\d$@$!%*?&]{8,}$/;
-    return regex.test(password);
-}
 
 exports.resetPassword = async (req, res) => {
     try {

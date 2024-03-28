@@ -7,13 +7,13 @@ const mongoose = require("mongoose");
 
 exports.login = async (req, res) => {
   try {
-      const { email, password, role } = req.body;
+      const { email, password } = req.body;
 
       // Find the user by email
       const user = await User.findOne({ email });
 
-      // If user not found or role doesn't match, return error
-      if (!user || user.role !== role) {
+      // If user not found, return error
+      if (!user) {
           return res.status(401).json({ message: "Invalid credentials" });
       }
 
@@ -42,7 +42,6 @@ exports.login = async (req, res) => {
       res.status(500).json({ message: "Internal server error" });
   }
 };
-
 
 exports.register = async (req, res) => {
   let session; // Declare a variable to hold the session
