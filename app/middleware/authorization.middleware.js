@@ -16,7 +16,7 @@ exports.verifyAdminRole = async (req, res, next) => {
 
       // Extract userId and role from the decoded token
       const { userId, role } = decoded;
-      console.log(role)
+      
 
       // Check if the user has the role of "admin"
       if (role !== 'admin') {

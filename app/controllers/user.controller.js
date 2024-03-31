@@ -47,7 +47,7 @@ exports.register = async (req, res) => {
   let session; // Declare a variable to hold the session
 
   try {
-    const { firstName, lastName, email, role } = req.body;
+    const { firstName, lastName, email, role ,designation} = req.body;
 
     // Start a new database session
     session = await mongoose.startSession();
@@ -78,6 +78,7 @@ exports.register = async (req, res) => {
       email,
       role,
       password: hashedPassword, // Store the hashed password
+      designation,
     });
 
     // Save the user to the database (within the session)
@@ -112,5 +113,62 @@ exports.register = async (req, res) => {
     res
       .status(500)
       .json({ message: "Internal server error", emailStatus: "fail" });
+  }
+};
+
+exports.updateUser = async (req, res) => {
+  try {
+    // Extract email from request body
+    const email = req.body.email;
+
+    // Check if the user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if the logged-in user is an admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Forbidden - Admin access required' });
+    }
+
+    // Update user details (first name, last name, role, isActive)
+    user.firstName = req.body.firstName || user.firstName;
+    user.lastName = req.body.lastName || user.lastName;
+    user.designation = req.body.designation || user.designation;
+    user.role = req.body.role || user.role;
+    user.isActive = req.body.isActive || user.isActive;
+
+
+    // Save the updated user details
+    await user.save();
+
+    // Return success message
+    res.status(200).json({ message: 'User details updated successfully', user });
+  } catch (error) {
+    console.error('Error updating user details:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  try {
+    // Extract email from request body
+    const email = req.body.email;
+
+    // Check if the user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Delete the user
+    await User.deleteOne({ email });
+
+    // Return success message
+    res.status(200).json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };

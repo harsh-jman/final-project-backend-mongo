@@ -10,6 +10,11 @@ router.post('/login', userController.login);
 // Register a new user
 router.post('/register', authenticate,verifyAdminRole, userController.register);
 
+router.put('/update', authenticate,verifyAdminRole, userController.updateUser);
+
+router.delete('/delete', authenticate,verifyAdminRole, userController.deleteUser);
+
+
 module.exports = router;
 
 

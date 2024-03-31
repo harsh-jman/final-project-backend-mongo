@@ -23,6 +23,7 @@ const seedAdminOnce = async (mongoURL) => {
     const lastName = process.env.ADMIN_LAST_NAME;
     const email = process.env.ADMIN_EMAIL;
     const password = process.env.ADMIN_PASSWORD;
+    const designation = process.env.ADMIN_DESIGNATION
 
     // Ensure all required environment variables are provided
     if (!firstName || !lastName || !email || !password) {
@@ -39,7 +40,8 @@ const seedAdminOnce = async (mongoURL) => {
       lastName,
       email,
       role: 'admin',
-      password: hashedPassword // Store the hashed password
+      password: hashedPassword, // Store the hashed password
+      designation : designation
     });
 
     // Save the admin user to the database
