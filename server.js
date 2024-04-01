@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const routes = require('./app/routes/main.routes');
 const cors = require('cors');
+const { findUserWithHigherDesignation , findUserWithHigherProficiency ,findAdminUsers } = require('./app/controllers/dynamicApproverAllocation.support.controller');
 
 // create express app
 const app = express();
@@ -26,6 +27,7 @@ mongoose.connect(dbConfig.url, {
     useNewUrlParser: true
 }).then(() => {
     console.log("Successfully connected to the database");
+    
 }).catch(err => {
     console.log('Could not connect to the database. Exiting now...', err);
     process.exit();

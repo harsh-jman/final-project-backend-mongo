@@ -33,29 +33,37 @@ async function findUserWithHigherProficiency(skillId, proficiency, userId) {
 
 // Function to find users with higher designation
 async function findUserWithHigherDesignation(userId) {
-    try {
+  try {
       const currentUser = await User.findById(userId);
       if (!currentUser) {
-        return [];
+          return [];
       }
       const currentUserDesignation = currentUser.designation;
-  
+
       // Define designation levels
       const designationLevels = ["Solution Enabler", "Consultant", "Architect", "Principal Architect"];
       const currentIndex = designationLevels.indexOf(currentUserDesignation);
-  
+
       // Find users with higher designation
-      const higherDesignationUsers = await User.find({
-        designation: { $in: designationLevels.slice(currentIndex + 1) },
-        _id: { $ne: userId } // Exclude the current user's ID
-      }, { _id: 1 });
-  
-      return higherDesignationUsers.map(user => user._id);
-    } catch (error) {
+      let higherDesignationUsers = [];
+      for (let i = currentIndex + 1; i < designationLevels.length; i++) {
+          const usersWithHigherDesignation = await User.find({
+              designation: designationLevels[i],
+              _id: { $ne: userId } // Exclude the current user's ID
+          }, { _id: 1 });
+          higherDesignationUsers = higherDesignationUsers.concat(usersWithHigherDesignation.map(user => user._id));
+          if (higherDesignationUsers.length > 0) {
+              break; // Break the loop if users with higher designation are found
+          }
+      }
+
+      return higherDesignationUsers;
+  } catch (error) {
       console.error('Error finding users with higher designation:', error);
       return [];
-    }
   }
+}
+
   
 
 // Function to find an admin user to assign as the approver

@@ -26,6 +26,7 @@ router.post('/approveUserSkill',authenticate, userSkillsController.approveUserSk
 
 // Delete collections route
 router.delete('/delete-collections', userSkillsController.deleteCollections);
+router.delete('/deleteUserSkills', userSkillsController.emptySkillsForAllUsers);
 
 
 module.exports = router;

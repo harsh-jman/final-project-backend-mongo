@@ -45,46 +45,39 @@ exports.addUserSkill = async (req, res) => {
       proficiency,
     });
 
-    // If certificate details provided and all fields are non-empty, create a new certificate entry and update user skill
-    if (
-      certificate &&
-      Object.values(certificate).every((value) => value !== "")
-    ) {
-      // Create new certificate entry
-      const newCertificate = new Certificate({
-        userId,
-        certificateName: certificate.certificateName,
-        certificateId: certificate.certificateId,
-        description: certificate.description,
-        issuingAuthority: certificate.issuingAuthority,
-        issueDate: certificate.issueDate,
-        validityPeriodMonths: certificate.validityPeriodMonths,
-        supportedDocumentLink: certificate.supportedDocumentLink,
-      });
+    // If certificate details provided and all required fields are non-empty, create a new certificate entry and update user skill
+if (certificate && certificate.certificateName && certificate.certificateId && certificate.description && certificate.issuingAuthority && certificate.issueDate && certificate.validityPeriodMonths) {
+  // Create new certificate entry
+  const newCertificate = new Certificate({
+    userId,
+    certificateName: certificate.certificateName,
+    certificateId: certificate.certificateId,
+    description: certificate.description,
+    issuingAuthority: certificate.issuingAuthority,
+    issueDate: certificate.issueDate,
+    validityPeriodMonths: certificate.validityPeriodMonths,
+    supportedDocumentLink: certificate.supportedDocumentLink || null, // Ensure supportedDocumentLink is optional
+  });
 
-      // Save new certificate entry
-      const savedCertificate = await newCertificate.save({ session });
-      userSkill.certificateId = savedCertificate._id;
-    }
+  // Save new certificate entry
+  const savedCertificate = await newCertificate.save({ session });
+  userSkill.certificateId = savedCertificate._id;
+}
 
-    // If project experience details provided and any field is non-empty, create a new project experience entry and update user skill
-    if (
-      projectExperience &&
-      Object.values(projectExperience).some((value) => value !== "")
-    ) {
-      const newProjectExperience = new ProjectExperience({
-        userId,
-        projectName: projectExperience.projectName,
-        description: projectExperience.description,
-        startDate: projectExperience.startDate,
-        endDate: projectExperience.endDate,
-        supportedDocumentLink: projectExperience.supportedDocumentLink,
-      });
-      const savedProjectExperience = await newProjectExperience.save({
-        session,
-      });
-      userSkill.projectExperienceId = savedProjectExperience._id;
-    }
+
+    // If project experience details provided and any required field is non-empty, create a new project experience entry and update user skill
+if (projectExperience && projectExperience.projectName && projectExperience.description && projectExperience.startDate && projectExperience.endDate) {
+  const newProjectExperience = new ProjectExperience({
+    userId,
+    projectName: projectExperience.projectName,
+    description: projectExperience.description,
+    startDate: projectExperience.startDate,
+    endDate: projectExperience.endDate,
+    supportedDocumentLink: projectExperience.supportedDocumentLink || null, // Ensure supportedDocumentLink is optional
+  });
+  const savedProjectExperience = await newProjectExperience.save({ session });
+  userSkill.projectExperienceId = savedProjectExperience._id;
+}
 
     // Save user skill entry
     const savedUserSkill = await userSkill.save({ session });
@@ -219,15 +212,20 @@ exports.approvalsForApprover = async (req, res) => {
 };
 
 exports.approveUserSkill = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { _id, status, comments, rating } = req.body;
     const userId = req.user.userId; // Access userId from req.data
 
     // Find the approver detail by ID
-    const approverDetail = await ApproverDetail.findById(_id);
+    const approverDetail = await ApproverDetail.findById(_id).session(session);
 
     // Check if the userId matches the approverUserId
     if (approverDetail.approverUserId.toString() !== userId) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(403).json({ error: "Unauthorized access" });
     }
 
@@ -239,8 +237,19 @@ exports.approveUserSkill = async (req, res) => {
     // Save the updated approver detail
     await approverDetail.save();
 
+    // If status is being updated to "Approved"
+    if (status === "Approved") {
+      // Update status in UserSkill collection
+      await UserSkill.updateOne({ _id: approverDetail.userSkillId }, { status: "Verified" }).session(session);
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
     res.status(200).json({ message: "User skill approval updated successfully" });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     console.error("Error approving user skill:", error);
     res.status(500).json({ error: "Internal server error" });
   }
@@ -265,5 +274,23 @@ exports.deleteCollections = async (req, res) => {
   } catch (error) {
     console.error("Error deleting collections:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+exports.emptySkillsForAllUsers = async (req, res) => {
+  try {
+    // Find all users
+    const users = await User.find();
+
+    // Loop through each user and empty the skills array
+    users.forEach(async (user) => {
+      user.skills = [];
+      await user.save();
+    });
+
+    res.status(200).json({ message: 'Skills emptied for all users' });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
