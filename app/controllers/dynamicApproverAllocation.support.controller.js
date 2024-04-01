@@ -17,6 +17,7 @@ async function findUserWithHigherProficiency(skillId, proficiency, userId) {
       // Find users with higher proficiency level
       const higherProficiencyUsers = await UserSkill.find({
         skillId,
+        status: "Verified",
         proficiency: { $in: proficiencyLevels.slice(currentIndex + 1) },
         userId: { $ne: userId } // Exclude the current user's ID
       }, { userId: 1 });

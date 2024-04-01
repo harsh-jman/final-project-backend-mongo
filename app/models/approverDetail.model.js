@@ -17,7 +17,7 @@ const approverDetailSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["Alocating Approver","pending", "verified", "rejected"],
+    enum: ["Alocating Approver","Pending", "Approved", "Rejected"],
     default: "Alocating Approver",
     required:true
   },

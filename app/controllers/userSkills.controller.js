@@ -23,10 +23,18 @@ exports.addUserSkill = async (req, res) => {
     ) {
       const existingCertificate = await Certificate.findOne({
         certificateId: certificate.certificateId,
+      }).populate({
+        path: 'userSkillId',
+        populate: {
+          path: 'approverDetailId'
+        }
       });
 
       if (existingCertificate) {
-        return res.status(400).json({ error: "Certificate already exists" });
+        const approverStatus = existingCertificate.userSkillId.approverDetailId.status;
+        if (approverStatus !== "rejected") {
+          return res.status(400).json({ error: "Certificate already added" });
+        }
       }
     }
 
@@ -96,7 +104,8 @@ exports.addUserSkill = async (req, res) => {
     const newApproverDetail = new ApproverDetail({
       userId,
       userSkillId: savedUserSkill._id,
-      approverUserId: approverUserId, // Added approverUserId field
+      approverUserId: approverUserId,
+      status: approverUserId ? "Pending" : "Alocating Approver" // Set status based on the presence of approverUserId
     });
 
     // Save approverDetail
@@ -121,6 +130,7 @@ exports.addUserSkill = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 exports.showUserSkills = async (req, res) => {
   try {
@@ -151,6 +161,87 @@ exports.showUserSkills = async (req, res) => {
     res.status(200).json({ userSkills });
   } catch (error) {
     console.error("Error fetching user skills:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.approvalsForApprover = async (req, res) => {
+  try {
+    const approverUserId = req.user.userId;
+
+    // Find all approvals for the given approverUserId
+    const approvals = await ApproverDetail.find({ approverUserId });
+
+    // If no approvals found, respond with an empty array
+    if (!approvals || approvals.length === 0) {
+      return res.status(200).json({ approvals: [] });
+    }
+
+    // Prepare an array to hold populated approvals
+    const populatedApprovals = [];
+
+    // Iterate over each approval and populate required fields
+    for (const approval of approvals) {
+      // Populate user details
+      const userDetails = await User.findById(approval.userId, "firstName lastName email designation role");
+
+      // Populate userSkill details
+      const userSkillDetails = await UserSkill.findById(approval.userSkillId)
+        .populate("skillId")
+        .populate("certificateId")
+        .populate("projectExperienceId");
+
+      // Construct populated approval object
+      const populatedApproval = {
+        _id: approval._id,
+        firstName: userDetails.firstName,
+        lastName: userDetails.lastName,
+        email: userDetails.email,
+        designation :userDetails.designation,
+        role:userDetails.role,
+        status: approval.status,
+        comments: approval.comments,
+        rating: approval.rating,
+        updatedAt: approval.updatedAt,
+        userSkill: userSkillDetails
+      };
+
+      // Add populated approval to the array
+      populatedApprovals.push(populatedApproval);
+    }
+
+    // Respond with populated approvals
+    res.status(200).json({ approvals: populatedApprovals });
+  } catch (error) {
+    console.error("Error fetching approvals for approver:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.approveUserSkill = async (req, res) => {
+  try {
+    const { _id, status, comments, rating } = req.body;
+    const userId = req.user.userId; // Access userId from req.data
+
+    // Find the approver detail by ID
+    const approverDetail = await ApproverDetail.findById(_id);
+
+    // Check if the userId matches the approverUserId
+    if (approverDetail.approverUserId.toString() !== userId) {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+
+    // Update the status, comments, and rating
+    approverDetail.status = status;
+    approverDetail.comments = comments;
+    approverDetail.rating = rating;
+
+    // Save the updated approver detail
+    await approverDetail.save();
+
+    res.status(200).json({ message: "User skill approval updated successfully" });
+  } catch (error) {
+    console.error("Error approving user skill:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -16,6 +16,17 @@ const userSkillSchema = new mongoose.Schema({
     enum: ["beginner", "intermediate", "advanced"],
     required: true
   },
+  status: {
+    type: String,
+    enum: ["Verified", "Not Verified"],
+    default: "Not Verified"
+  },
+  hackerRankScore: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default:0
+  },
   certificateId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Certificate'

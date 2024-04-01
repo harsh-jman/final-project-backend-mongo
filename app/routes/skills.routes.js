@@ -19,6 +19,10 @@ router.post('/addUserSkills',authenticate, userSkillsController.addUserSkill);
 
 router.get('/showUserSkills',authenticate, userSkillsController.showUserSkills);
 
+//APPROVER
+router.get('/approvalsForApprover',authenticate, userSkillsController.approvalsForApprover);
+
+router.post('/approveUserSkill',authenticate, userSkillsController.approveUserSkill);
 
 // Delete collections route
 router.delete('/delete-collections', userSkillsController.deleteCollections);

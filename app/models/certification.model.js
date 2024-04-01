@@ -9,7 +9,6 @@ const certificateSchema = new mongoose.Schema({
   certificateId: {
     type: String,
     required: true,
-    unique: true // Set certificateId as unique
   },
   certificateName: {
     type: String,
