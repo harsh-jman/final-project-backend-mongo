@@ -134,7 +134,7 @@ exports.showUserSkills = async (req, res) => {
       { path: "skillId" },
       {
         path: "approverDetailId",
-        populate: { path: "approverUserId", select: "firstName lastName" },
+        populate: { path: "approverUserId", select: "firstName lastName email designation role" },
       },
     ];
 
