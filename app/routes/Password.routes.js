@@ -6,4 +6,6 @@ router.post('/reset', passwordController.resetPassword);
 
 router.post('/forget', passwordController.forgotPassword);
 
+
+
 module.exports = router;
