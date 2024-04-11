@@ -36,7 +36,7 @@ exports.login = async (req, res) => {
       );
 
       // Return JWT token and role in the response
-      res.json({ message: "Login successful", token, role: user.role });
+      res.json({ message: "Login successful", token, role: user.role ,firstName: user.firstName});
   } catch (error) {
       console.error("Error logging in:", error);
       res.status(500).json({ message: "Internal server error" });
