@@ -204,7 +204,6 @@ exports.approvalsForApprover = async (req, res) => {
         .populate("certificateId")
         .populate("projectExperienceId");
 
-      console.log(approval.userId)
       // Construct populated approval object
       const populatedApproval = {
         _id: approval._id,

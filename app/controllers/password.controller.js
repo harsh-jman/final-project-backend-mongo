@@ -70,7 +70,6 @@ exports.forgotPassword = async (req, res) => {
             uppercase: true,
             strict: true, // Ensure that all character types are included
         });
-        console.log(randomPassword)
         // Hash the random password
         const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
