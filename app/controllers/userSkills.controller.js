@@ -1,10 +1,12 @@
 const mongoose = require("mongoose");
 const User = require("../models/user.model"); // Import the User model
 const UserSkill = require("../models/userSkills.model");
+const Skill = require('../models/skills.model'); 
 const Certificate = require("../models/certification.model");
 const ProjectExperience = require("../models/projectExperience.model");
 const ApproverDetail = require("../models/approverDetail.model");
 const dynamicApproverAllocation = require("../controllers/dynamicApproverAllocation");
+const Email = require("../utils/email.utils")
 
 
 //Transaction Aproach
@@ -15,6 +17,9 @@ exports.addUserSkill = async (req, res) => {
   try {
     const { skillId, proficiency, certificate, projectExperience } = req.body;
     const userId = req.user.userId; // Access userId from req.user
+
+    // Generate a random hackerRankScore between 30 and 100
+    const hackerRankScore = Math.floor(Math.random() * (100 - 30 + 1) + 30);
 
     // If certificate details provided and all fields are non-empty, check if certificate with provided ID already exists
     if (
@@ -43,6 +48,7 @@ exports.addUserSkill = async (req, res) => {
       userId,
       skillId,
       proficiency,
+      hackerRankScore
     });
 
     // If certificate details provided and all required fields are non-empty, create a new certificate entry and update user skill
@@ -107,6 +113,20 @@ if (projectExperience && projectExperience.projectName && projectExperience.desc
     // Update userSkill with the approverDetailId
     savedUserSkill.approverDetailId = savedApproverDetail._id;
     await savedUserSkill.save({ session });
+
+    // Send email to the approver
+    if (approverUserId) {
+      const approver = await User.findById(approverUserId);
+      if (approver) {
+        const skill = await Skill.findById(skillId); // Fetch the skill name
+        if (skill) {
+          const subject = "Approval Required";
+          const text = `Hello ${approver.firstName},\n\nA new skill approval request for ${skill.skillName} has been created and requires your attention.\n\nPlease review and take appropriate action.\n\nThank you.`;
+          await Email.sendEmail(approver.email, subject, text);
+        }
+      }
+    }
+
 
     // Commit the transaction
     await session.commitTransaction();
@@ -184,6 +204,7 @@ exports.approvalsForApprover = async (req, res) => {
         .populate("certificateId")
         .populate("projectExperienceId");
 
+      console.log(approval.userId)
       // Construct populated approval object
       const populatedApproval = {
         _id: approval._id,
@@ -242,6 +263,29 @@ exports.approveUserSkill = async (req, res) => {
       // Update status in UserSkill collection
       await UserSkill.updateOne({ _id: approverDetail.userSkillId }, { status: "Verified" }).session(session);
     }
+
+    // If status is being updated to "Approved" or "Rejected"
+    if (status === "Approved" || status === "Rejected") {
+      // Find the user whose skill is being approved/rejected
+      const user = await User.findById(approverDetail.userId);
+
+      // Fetch the skill name
+      const userSkill = await UserSkill.findById(approverDetail.userSkillId).populate('skillId');
+
+      // Prepare email content
+      let subject, text;
+      if (status === "Approved") {
+        subject = "Skill Approval Decision";
+        text = `Hello ${user.firstName},\n\nYour skill ${userSkill.skillId.skillName} has been approved.\n\nThank you.`;
+      } else {
+        subject = "Skill Rejection Decision";
+        text = `Hello ${user.firstName},\n\nYour skill ${userSkill.skillId.skillName} has been rejected.\n\nReason: ${comments}\n\nThank you.`;
+      }
+
+      // Send email to the user
+      await Email.sendEmail(user.email, subject, text);
+    }
+
 
     await session.commitTransaction();
     session.endSession();
